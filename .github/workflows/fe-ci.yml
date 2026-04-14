@@ -35,6 +35,22 @@ jobs:
       - name: Install Playwright dependencies (no browser download)
         run: npx playwright install-deps chrome
 
+      # ── Pact consumer contract tests ──────────────────────────────────────
+      # Runs Vitest in Node mode — no browser needed, Pact spins up its own
+      # mock HTTP server per interaction.
+      # Generated pact file: pacts/loyalty-ui-loyalty-mediation.json
+      - name: Run Pact consumer contract tests
+        run: npm run test:contract
+
+      - name: Upload pact file
+        uses: actions/upload-artifact@v4
+        with:
+          name: pact-loyalty-ui-loyalty-mediation
+          # pacts/ dir lives at the repo root (two levels above tests/contract/)
+          path: pacts/loyalty-ui-loyalty-mediation.json
+          retention-days: 30
+
+      # ── Playwright CI tests ────────────────────────────────────────────────
       - name: Run FE CI tests (fe-ci project)
         run: npm run test:ci
 

@@ -11,6 +11,14 @@ name: FE E2E (fake mode)
 on:
   push:
     branches: [master, main]
+    # Only run when files that affect the FE or BE stack change.
+    # This avoids re-running the expensive Solace startup on docs-only commits.
+    paths:
+      - 'src/**'
+      - 'tests/e2e/**'
+      - 'package*.json'
+      - 'playwright.config.js'
+      - 'vite.config.js'
   workflow_dispatch:
 
 jobs:
