@@ -1,0 +1,49 @@
+# Node modules
+node_modules/
+
+# Production build output
+dist/
+
+# Vite cache
+.vite/
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Lock files (if you prefer package-lock only, remove the other lines)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# Environment files
+.env
+.env.*
+
+# Playwright test output
+playwright-report/
+test-results/
+
+# IDE/editor folders and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# OS generated files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Optional: local npm binary
+npm-debug.log*
+yarn-debug.log*
+
+# Optional: temporary files
+*.tmp
+*.temp
+*~

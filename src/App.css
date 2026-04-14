@@ -1,0 +1,75 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ── Header ── */
+.app-header {
+  background: #1a3a5c;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.header-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-icon {
+  font-size: 22px;
+  color: #f6c90e;
+}
+
+.brand-name {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+/* ── Main ── */
+.app-main {
+  flex: 1;
+  max-width: 600px;
+  width: 100%;
+  margin: 48px auto;
+  padding: 0 24px;
+}
+
+/* ── Hero ── */
+.hero {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.hero h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a3a5c;
+  margin-bottom: 10px;
+}
+
+.hero p {
+  font-size: 16px;
+  color: #4a5568;
+}
+
+/* ── Footer ── */
+.app-footer {
+  text-align: center;
+  padding: 20px;
+  font-size: 13px;
+  color: #718096;
+  border-top: 1px solid #e2e8f0;
+  background: #fff;
+}

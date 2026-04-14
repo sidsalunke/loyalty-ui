@@ -1,0 +1,101 @@
+name: FE E2E (fake mode)
+
+# ── Trigger ───────────────────────────────────────────────────────────────────
+# Runs after every merge to master/main.
+# Spins up the full local stack (Solace + vendor-mock + mediation-service) using
+# docker-compose from the loyalty-mediation repo, then runs the fe-e2e Playwright
+# project against the real mediation service.
+#
+# No vendor traffic ever leaves the runner — vendor is our own vendor-mock.
+# ─────────────────────────────────────────────────────────────────────────────
+on:
+  push:
+    branches: [master, main]
+  workflow_dispatch:
+
+jobs:
+  fe-e2e-fake:
+    name: FE E2E Tests (real BE + vendor-mock)
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Checkout both repos ─────────────────────────────────────────────
+      - name: Checkout loyalty-ui
+        uses: actions/checkout@v4
+        with:
+          path: loyalty-ui
+
+      - name: Checkout loyalty-mediation
+        uses: actions/checkout@v4
+        with:
+          # Update this to your GitHub org/username once the repo is pushed.
+          # For a private repo, supply a PAT via secrets.MEDIATION_REPO_TOKEN.
+          repository: sidsalunke/loyalty-mediation
+          path: loyalty-mediation
+
+      # ── 2. Start backend stack (Solace + vendor-mock + mediation) ──────────
+      - name: Start backend stack
+        working-directory: loyalty-mediation
+        run: docker compose up -d
+
+      # Solace takes ~90 s to initialise. We wait until the mediation service
+      # responds to an HTTP probe (port open = Spring Boot fully started).
+      - name: Wait for mediation service to be ready
+        run: |
+          echo "Waiting for mediation service (up to 3 min)..."
+          timeout 180 bash -c \
+            'until curl -sf -o /dev/null -w "%{http_code}" \
+               -X POST http://localhost:8080/api/v1/enroll \
+               -H "Content-Type: application/json" \
+               -d "{}" | grep -qE "^[245]"; \
+             do sleep 5; done'
+          echo "Mediation service is ready."
+
+      # ── 3. Setup Node & install deps ───────────────────────────────────────
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: loyalty-ui/package-lock.json
+
+      - name: Install dependencies
+        working-directory: loyalty-ui
+        run: npm ci
+
+      - name: Install Playwright dependencies (no browser download)
+        working-directory: loyalty-ui
+        run: npx playwright install-deps chrome
+
+      # ── 4. Run E2E tests ───────────────────────────────────────────────────
+      - name: Run FE E2E tests (fe-e2e project)
+        working-directory: loyalty-ui
+        run: npm run test:e2e
+
+      # ── 5. Collect artefacts ───────────────────────────────────────────────
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-e2e
+          path: loyalty-ui/playwright-report/
+          retention-days: 14
+
+      - name: Upload test traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces-e2e
+          path: loyalty-ui/test-results/
+          retention-days: 7
+
+      - name: Dump mediation logs on failure
+        if: failure()
+        working-directory: loyalty-mediation
+        run: docker compose logs mediation
+
+      # ── 6. Tear down ───────────────────────────────────────────────────────
+      - name: Stop backend stack
+        if: always()
+        working-directory: loyalty-mediation
+        run: docker compose down -v

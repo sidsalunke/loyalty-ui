@@ -1,0 +1,55 @@
+name: FE CI
+
+# ── Trigger ───────────────────────────────────────────────────────────────────
+# Runs on every PR targeting master/main.
+# No real backend services are needed — all API calls are intercepted by
+# Playwright's route mocking inside the tests.
+# ─────────────────────────────────────────────────────────────────────────────
+on:
+  pull_request:
+    branches: [master, main]
+  # Allow manual runs from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  fe-ci:
+    name: FE CI Tests (mocked BE)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # GitHub-hosted runners have Chrome pre-installed.
+      # Playwright's channel: 'chrome' in the config picks it up automatically —
+      # no separate browser download needed.
+      - name: Install Playwright dependencies (no browser download)
+        run: npx playwright install-deps chrome
+
+      - name: Run FE CI tests (fe-ci project)
+        run: npm run test:ci
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-ci
+          path: playwright-report/
+          retention-days: 14
+
+      - name: Upload test traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces-ci
+          path: test-results/
+          retention-days: 7
