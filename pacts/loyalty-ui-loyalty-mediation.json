@@ -1,0 +1,432 @@
+{
+  "consumer": {
+    "name": "loyalty-ui"
+  },
+  "interactions": [
+    {
+      "description": "a status poll for a completed enrolment",
+      "providerStates": [
+        {
+          "name": "an enrolment exists with correlationId completed-corr-id and status COMPLETED"
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/enroll/completed-corr-id/status"
+      },
+      "response": {
+        "body": {
+          "correlationId": "completed-corr-id",
+          "membershipNumber": "123456789",
+          "status": "COMPLETED",
+          "tier": "BLUE"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.correlationId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.membershipNumber": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9]{9}"
+                }
+              ]
+            },
+            "$.tier": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a status poll for a pending enrolment",
+      "providerStates": [
+        {
+          "name": "an enrolment exists with correlationId pending-corr-id and status PENDING"
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/enroll/pending-corr-id/status"
+      },
+      "response": {
+        "body": {
+          "correlationId": "pending-corr-id",
+          "status": "PENDING"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.correlationId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a status poll for an unknown correlationId",
+      "providerStates": [
+        {
+          "name": "no enrolment exists for correlationId unknown-corr-id"
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/enroll/unknown-corr-id/status"
+      },
+      "response": {
+        "status": 404
+      }
+    },
+    {
+      "description": "a valid enrolment request",
+      "providerStates": [
+        {
+          "name": "the vendor system is available"
+        }
+      ],
+      "request": {
+        "body": {
+          "country": "AU",
+          "dateOfBirth": "1990-06-15",
+          "firstName": "Jane",
+          "lastName": "Smith"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.country": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.dateOfBirth": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.firstName": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.lastName": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "/api/v1/enroll"
+      },
+      "response": {
+        "body": {
+          "correlationId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+          "message": "Enrollment request accepted"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.correlationId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.message": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "an enrolment request for an existing member",
+      "providerStates": [
+        {
+          "name": "the member already exists in the vendor system"
+        }
+      ],
+      "request": {
+        "body": {
+          "country": "AU",
+          "dateOfBirth": "1990-06-15",
+          "firstName": "Jane",
+          "lastName": "Smith"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.country": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.dateOfBirth": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.firstName": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.lastName": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "/api/v1/enroll"
+      },
+      "response": {
+        "body": {
+          "message": "Member already exists",
+          "status": 422
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.message": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.status": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 422
+      }
+    },
+    {
+      "description": "an enrolment request when vendor is down",
+      "providerStates": [
+        {
+          "name": "the vendor system is unavailable"
+        }
+      ],
+      "request": {
+        "body": {
+          "country": "AU",
+          "dateOfBirth": "1990-06-15",
+          "firstName": "Jane",
+          "lastName": "Smith"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.country": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.dateOfBirth": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.firstName": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.lastName": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "method": "POST",
+        "path": "/api/v1/enroll"
+      },
+      "response": {
+        "body": {
+          "message": "Could not connect to the vendor service",
+          "status": 502
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.message": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.status": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 502
+      }
+    },
+    {
+      "description": "an enrolment request with missing fields",
+      "providerStates": [
+        {
+          "name": "the vendor system is available"
+        }
+      ],
+      "request": {
+        "body": {},
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "method": "POST",
+        "path": "/api/v1/enroll"
+      },
+      "response": {
+        "body": {
+          "message": "Validation failed",
+          "status": 400
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "matchingRules": {
+          "body": {
+            "$.message": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.status": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          }
+        },
+        "status": 400
+      }
+    }
+  ],
+  "metadata": {
+    "pact-js": {
+      "version": "16.3.0"
+    },
+    "pactRust": {
+      "ffi": "0.5.3",
+      "models": "1.3.9"
+    },
+    "pactSpecification": {
+      "version": "3.0.0"
+    }
+  },
+  "provider": {
+    "name": "loyalty-mediation"
+  }
+}

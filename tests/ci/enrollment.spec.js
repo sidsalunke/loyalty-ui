@@ -8,7 +8,9 @@
  *   ✓ Form renders with all required fields
  *   ✓ Client-side validation errors (empty, underage, short name)
  *   ✓ Field error clears on user input
- *   ✓ Happy path — 200 success
+ *   ✓ Happy path — 200 success → PROCESSING → COMPLETED with membership number
+ *   ✓ PROCESSING card shown while polling is in-flight
+ *   ✓ Membership number displayed once COMPLETED
  *   ✓ Success panel shows tier badge and correlation ID
  *   ✓ Can reset and enrol another member
  *   ✓ Submit button disabled while request is in-flight
@@ -30,14 +32,49 @@ async function fillValidForm(page) {
   await page.selectOption('#country', 'AU')
 }
 
-function mockSuccess(page, correlationId = 'test-corr-id-001') {
-  return page.route('/api/v1/enroll', route =>
+/**
+ * Mocks the full async enrolment flow:
+ *   POST /api/v1/enroll           → 200 { message, correlationId }
+ *   GET  /api/v1/enroll/*/status  → 200 PENDING (first N calls), then COMPLETED
+ *
+ * pendingCount: how many PENDING responses to return before COMPLETED
+ */
+function mockFullEnrolmentFlow(page, {
+  correlationId = 'test-corr-id-001',
+  membershipNumber = '123456789',
+  tier = 'BLUE',
+  pendingCount = 1
+} = {}) {
+  page.route('/api/v1/enroll', route =>
     route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({ message: 'Enrollment request accepted', correlationId })
     })
   )
+
+  let statusCallCount = 0
+  page.route(`/api/v1/enroll/${correlationId}/status`, route => {
+    statusCallCount++
+    if (statusCallCount <= pendingCount) {
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ correlationId, status: 'PENDING' })
+      })
+    } else {
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ correlationId, status: 'COMPLETED', membershipNumber, tier })
+      })
+    }
+  })
+}
+
+// Legacy helper — for tests that only care about the POST response (no polling)
+function mockSuccess(page, correlationId = 'test-corr-id-001') {
+  mockFullEnrolmentFlow(page, { correlationId, pendingCount: 0 })
 }
 
 // ── Form rendering ────────────────────────────────────────────────────────────
@@ -125,8 +162,29 @@ test.describe('Client-side validation', () => {
 // ── Happy path ────────────────────────────────────────────────────────────────
 
 test.describe('Happy path', () => {
+  test('shows PROCESSING card while polling, then SUCCESS with membership number', async ({ page }) => {
+    mockFullEnrolmentFlow(page, {
+      correlationId:    'happy-path-corr-id',
+      membershipNumber: '987654321',
+      tier:             'BLUE',
+      pendingCount:     2    // two PENDING responses before COMPLETED
+    })
+    await page.goto('/')
+    await fillValidForm(page)
+    await page.getByTestId('submit-btn').click()
+
+    // PROCESSING card should appear immediately after the POST returns
+    await expect(page.getByTestId('processing-panel')).toBeVisible()
+
+    // Eventually the status polling resolves to COMPLETED
+    await expect(page.getByTestId('success-panel')).toBeVisible({ timeout: 10_000 })
+    await expect(page.locator('.tier-badge')).toHaveText('Blue Member')
+    await expect(page.locator('.correlation-id code')).toHaveText('happy-path-corr-id')
+    await expect(page.locator('.membership-value')).toHaveText('987654321')
+  })
+
   test('shows success panel with Blue Member badge on 200', async ({ page }) => {
-    await mockSuccess(page, 'happy-path-corr-id')
+    mockFullEnrolmentFlow(page, { correlationId: 'happy-path-corr-id', pendingCount: 0 })
     await page.goto('/')
     await fillValidForm(page)
     await page.getByTestId('submit-btn').click()
